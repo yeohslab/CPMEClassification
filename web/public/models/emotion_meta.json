@@ -1,0 +1,13 @@
+{
+  "backend": "simple_cnn",
+  "labels": [
+    "angry",
+    "fear",
+    "happy",
+    "neutral",
+    "sad",
+    "surprise"
+  ],
+  "max_length": 128,
+  "vocab": "vocab_emotion.json"
+}

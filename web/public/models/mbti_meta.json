@@ -1,0 +1,24 @@
+{
+  "backend": "mbti_textcnn",
+  "labels": [
+    "ENFJ",
+    "ENFP",
+    "ENTJ",
+    "ENTP",
+    "ESFJ",
+    "ESFP",
+    "ESTJ",
+    "ESTP",
+    "INFJ",
+    "INFP",
+    "INTJ",
+    "INTP",
+    "ISFJ",
+    "ISFP",
+    "ISTJ",
+    "ISTP"
+  ],
+  "max_length": 160,
+  "max_posts": 16,
+  "vocab": "vocab_mbti.json"
+}
