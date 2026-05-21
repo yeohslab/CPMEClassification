@@ -7,7 +7,7 @@
 | 情绪 | 1 条帖子 | 6 维情绪强度（0–1） |
 | MBTI | 8–16 条帖子（同一用户） | 16 型 MBTI |
 
-演示站（GitHub Pages）：`https://yeohslab.github.io/CPEMClassification/`
+演示站（GitHub Pages）：`https://yeohslab.github.io/CPMEClassification/`
 
 ## 环境
 

@@ -13,4 +13,4 @@
 ## 部署
 
 - GitHub Pages 静态站 + 浏览器 ONNX 推理
-- 仓库：`CPEMClassification`，Pages base 路径 `/CPEMClassification/`
+- 仓库：`CPMEClassification`，Pages base 路径 `/CPMEClassification/`

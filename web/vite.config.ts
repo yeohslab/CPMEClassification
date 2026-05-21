@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/CPEMClassification/",
+  base: "/CPMEClassification/",
   assetsInclude: ["**/*.wasm"],
   build: {
     outDir: "dist",

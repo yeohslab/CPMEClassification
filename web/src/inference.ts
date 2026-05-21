@@ -5,7 +5,7 @@ import { fetchVocab } from "./tokenizer";
 
 const BASE = import.meta.env.BASE_URL;
 
-// Vite base is /CPEMClassification/; default ORT wasm URLs miss it and return index.html.
+// Vite base is /CPMEClassification/; default ORT wasm URLs miss it and return index.html.
 ort.env.wasm.wasmPaths = { wasm: ortWasm, mjs: ortWasmMjs };
 
 export const EMOTION_LABELS = [
