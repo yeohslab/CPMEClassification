@@ -1,0 +1,86 @@
+:root {
+  /* Role groups (16Personalities-inspired) */
+  --role-analyst: #88619a;
+  --role-analyst-light: #f3eef6;
+  --role-diplomat: #33a474;
+  --role-diplomat-light: #e8f6ef;
+  --role-sentinel: #4298b4;
+  --role-sentinel-light: #e8f4f8;
+  --role-explorer: #e4ae3a;
+  --role-explorer-light: #fdf6e8;
+
+  /* Emotion dimensions */
+  --emotion-angry: #e11d48;
+  --emotion-fear: #7c3aed;
+  --emotion-happy: #eab308;
+  --emotion-neutral: #64748b;
+  --emotion-sad: #3b82f6;
+  --emotion-surprise: #f97316;
+
+  /* Surfaces */
+  --bg-page: #f6f7f9;
+  --bg-card: #ffffff;
+  --bg-muted: #eef1f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #5a6a7a;
+  --text-muted: #94a3b8;
+  --border: #d8e0ea;
+  --border-focus: #4298b4;
+
+  /* Brand / CTA default */
+  --accent: #4298b4;
+  --accent-hover: #357a92;
+  --accent-contrast: #ffffff;
+
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+  --max-content: 1040px;
+  --max-narrow: 900px;
+
+  /* Typography */
+  --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+}
+
+[data-role="analyst"] {
+  --role-color: var(--role-analyst);
+  --role-light: var(--role-analyst-light);
+}
+
+[data-role="diplomat"] {
+  --role-color: var(--role-diplomat);
+  --role-light: var(--role-diplomat-light);
+}
+
+[data-role="sentinel"] {
+  --role-color: var(--role-sentinel);
+  --role-light: var(--role-sentinel-light);
+}
+
+[data-role="explorer"] {
+  --role-color: var(--role-explorer);
+  --role-light: var(--role-explorer-light);
+}

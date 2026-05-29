@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { predictMbti } from "../inference";
+import MbtiResultCard from "./MbtiResultCard";
 
 interface Props {
   modelsReady: boolean;
+  onResult?: (mbti: string, top3: { type: string; prob: number }[]) => void;
 }
 
 const MAX_POSTS = 16;
@@ -13,7 +15,7 @@ const DEFAULT_POSTS = [
   "更关注内心感受而非表面热闹。",
 ];
 
-export default function MbtiPanel({ modelsReady }: Props) {
+export default function MbtiPanel({ modelsReady, onResult }: Props) {
   const [posts, setPosts] = useState<string[]>(DEFAULT_POSTS);
   const [mbti, setMbti] = useState<string | null>(null);
   const [top3, setTop3] = useState<{ type: string; prob: number }[]>([]);
@@ -46,6 +48,7 @@ export default function MbtiPanel({ modelsReady }: Props) {
       const result = await predictMbti(valid);
       setMbti(result.mbti);
       setTop3(result.probs);
+      onResult?.(result.mbti, result.probs);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -56,66 +59,72 @@ export default function MbtiPanel({ modelsReady }: Props) {
   const atMax = posts.length >= MAX_POSTS;
 
   return (
-    <div className="panel">
-      <p>
-        输入同一用户的多条帖子（每条一格，建议 8–16 条）。需要更多时点击「添加帖子」。
-      </p>
-      <div className="mbti-posts">
-        {posts.map((post, i) => (
-          <div className="mbti-post-row" key={i}>
-            <label htmlFor={`mbti-post-${i}`}>帖子 {i + 1}</label>
-            <textarea
-              id={`mbti-post-${i}`}
-              value={post}
-              onChange={(e) => updatePost(i, e.target.value)}
-              placeholder="输入一条帖子…"
-              rows={2}
-              disabled={!modelsReady}
-            />
-            {posts.length > 1 && (
-              <button
-                type="button"
-                className="mbti-remove"
-                onClick={() => removePost(i)}
+    <div className="panel-layout panel-layout--mbti">
+      <div className="panel panel--main">
+        <header className="panel__header">
+          <h2 className="panel__title">多帖 MBTI 预测</h2>
+          <p className="panel__desc">
+            输入同一用户的多条帖子（建议 8–16 条），模型将聚合文本特征预测
+            16 型之一。
+          </p>
+        </header>
+        <div className="mbti-posts">
+          {posts.map((post, i) => (
+            <div className="mbti-post-row" key={i}>
+              <label htmlFor={`mbti-post-${i}`} className="mbti-post-row__label">
+                帖子 {i + 1}
+              </label>
+              <textarea
+                id={`mbti-post-${i}`}
+                className="input-textarea input-textarea--compact"
+                value={post}
+                onChange={(e) => updatePost(i, e.target.value)}
+                placeholder="输入一条帖子…"
+                rows={2}
                 disabled={!modelsReady}
-                title="删除此条"
-                aria-label={`删除帖子 ${i + 1}`}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
+              />
+              {posts.length > 1 && (
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  onClick={() => removePost(i)}
+                  disabled={!modelsReady}
+                  title="删除此条"
+                  aria-label={`删除帖子 ${i + 1}`}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            className="btn btn--dashed"
+            onClick={addPost}
+            disabled={!modelsReady || atMax}
+          >
+            + 添加帖子
+            {atMax ? `（最多 ${MAX_POSTS} 条）` : ""}
+          </button>
+        </div>
         <button
           type="button"
-          className="mbti-add"
-          onClick={addPost}
-          disabled={!modelsReady || atMax}
+          className="btn btn--primary"
+          onClick={handlePredict}
+          disabled={!modelsReady || loading}
         >
-          + 添加帖子
-          {atMax ? `（最多 ${MAX_POSTS} 条）` : ""}
+          {loading ? "分析中…" : "预测 MBTI"}
         </button>
+        {error && (
+          <p className="status status--error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
-      <button
-        className="primary"
-        onClick={handlePredict}
-        disabled={!modelsReady || loading}
-      >
-        {loading ? "分析中…" : "预测 MBTI"}
-      </button>
-      {error && <p className="status error">{error}</p>}
-      {mbti && (
-        <>
-          <div className="mbti-result">预测类型：{mbti}</div>
-          <div className="mbti-top">
-            Top-3：
-            {top3.map((t) => (
-              <div key={t.type}>
-                {t.type} — {(t.prob * 100).toFixed(1)}%
-              </div>
-            ))}
-          </div>
-        </>
+      {mbti && top3.length > 0 && (
+        <div className="panel-aside panel-aside--result">
+          <MbtiResultCard mbti={mbti} top3={top3} />
+        </div>
       )}
     </div>
   );

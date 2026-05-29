@@ -1,0 +1,98 @@
+\section{数据与方法}
+
+本研究使用 NHANES 2017--2020 前疫情周期公开 \texttt{.xpt} 文件，以受访者序号 \texttt{SEQN} 内连接人口学、抑郁筛查、睡眠与体力活动数据。PHQ-9 九题（\texttt{DPQ010}--\texttt{DPQ090}）在 SAS 传输格式中常以浮点存储，预处理时对条目四舍五入至 $\{0,1,2,3\}$ 并剔除拒绝/缺失编码后求和；九题齐全者计算 \texttt{phq9\_total}，并以总分 $\geq 10$ 定义抑郁筛查阳性 \cite{kroenke2001phq9}。分析样本为年龄 $\geq 18$ 岁、具完整 PHQ-9 且 MEC 权重 \texttt{WTMECPRP}$>0$ 的受试者（$n \approx 8276$）。复杂抽样分析采用 \texttt{WTMECPRP} 加权；族裔分组变量为 \texttt{RIDRETH3}。
+
+\section{差分隐私：PHQ-9 统计量加噪}
+
+\begin{definition}[$\varepsilon$-差分隐私]
+随机机制 $\mathcal{M}$ 满足 $\varepsilon$-DP，若对任意相邻数据集 $D,D'$ 及可测集 $S$，有 $\Pr[\mathcal{M}(D)\in S] \leq e^\varepsilon \Pr[\mathcal{M}(D')\in S]$。
+\end{definition}
+
+对取值有界在 $[0,27]$ 的 PHQ-9 加权均值 $\bar{x}$，采用 Laplace 机制 $\tilde{\bar{x}} = \bar{x} + \mathrm{Lap}(0, \Delta/\varepsilon)$，其中敏感度取 $\Delta = 27/n$（$n$ 为样本量）；对抑郁阳性率（0/1 均值）取 $\Delta = 1/n$。在 $\varepsilon \in \{0.1,0.5,1,2,5\}$ 下各重复 200 次，报告平均绝对误差（MAE）。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{dp_epsilon_tradeoff.pdf}
+    \caption{隐私预算 $\varepsilon$ 与加噪统计量 MAE 的权衡}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{dp_noisy_mean_dist.pdf}
+    \caption{$\varepsilon=1$ 时 PHQ-9 加权均值的 Laplace 加噪分布}
+\end{figure}
+
+\section{族裔算法公平性}
+
+以睡眠、体力活动、收入与教育等特征（不含族裔）训练逻辑回归预测 \texttt{depressed}，并在测试集上按 \texttt{RIDRETH3} 计算加权 TPR、FPR 与阳性预测率。对照实验将族裔 one-hot 显式纳入模型，以观察指标在族裔组间的偏移。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{fairness_tpr_fpr_by_ethnicity.pdf}
+    \caption{各族裔加权 TPR 与 FPR（基准模型不含族裔特征）}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{fairness_selection_rate.pdf}
+    \caption{各族裔阳性预测率（人口统计均等视角）}
+\end{figure}
+
+\section{诊断损失矩阵与最优贝叶斯阈值}
+
+设真实标签 $Y\in\{0,1\}$，预测概率 $p=P(Y=1\mid X)$，损失矩阵
+\begin{equation}
+L = \begin{bmatrix} 0 & L_{FP} \\ L_{FN} & 0 \end{bmatrix}.
+\end{equation}
+\begin{proposition}
+最小化期望损失 $\mathbb{E}[L(Y,\hat{Y})]$ 的阈值规则为 $\hat{y}=1$ 当且仅当 $p > \tau^\ast$，其中
+\begin{equation}
+\tau^\ast = \frac{L_{FN}}{L_{FN}+L_{FP}}.
+\end{equation}
+\end{proposition}
+\begin{proof}[证明要点]
+对固定 $p$，比较期望损失 $p L_{FN}$（判阴性）与 $(1-p)L_{FP}$（判阳性），令二者相等即得 $\tau^\ast$。
+\end{proof}
+
+筛查场景取 $L_{FN}=5, L_{FP}=1$，故 $\tau^\ast = 5/6 \approx 0.833$。式 (2) 对\textbf{单个}预测概率 $p$ 给出最优决策；在验证集上对全体样本使用\textbf{同一}阈值 $\tau$ 最小化平均损失时，最优 $\tau$ 可能因 $p$ 分布而异（本数据网格最优约 $0.65$），图中同时标注 $\tau^\ast$ 供对照。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{bayes_loss_vs_threshold.pdf}
+    \caption{期望损失随阈值 $\tau$ 变化及 $\tau^\ast$ 位置}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{bayes_threshold_by_group.pdf}
+    \caption{分族裔期望损失：$\tau=0.5$、$\tau^\ast$ 与网格最优对比}
+\end{figure}
+
+\section{因果推断：后门调整}
+
+对暴露 $T$ 与结局 $Y$（抑郁），后门公式为
+\begin{equation}
+P(Y\mid do(T=t)) = \sum_a P(Y\mid T=t, A=a)\, P(A=a).
+\end{equation}
+\textbf{贫困暴露}：\texttt{INDFMPIR}$<1$；调整集含年龄（分箱）、性别、族裔、教育、婚姻及低教育指示。\textbf{低教育暴露}：\texttt{DMDEDUC2} 低于高中；调整年龄、性别、族裔、婚姻（不调整收入，避免教育$\to$收入$\to$抑郁 路径上的过度阻断）。采用加权 G-computation 估计 ATE，Bootstrap 给出 95\% 区间；辅以加权 Logistic 回归核对方向。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.78\textwidth]{causal_ate_forest.pdf}
+    \caption{贫困与低教育对抑郁风险的调整后 ATE 森林图}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.65\textwidth]{causal_dag.pdf}
+    \caption{因果 DAG 与调整集示意}
+\end{figure}
+
+\section{讨论与局限}
+
+\begin{itemize}
+    \item \textbf{横断面设计}：因果估计为关联性调整，不能排除反向因果与未测混杂。
+    \item \textbf{复杂抽样}：部分模块 Bootstrap 未完全按 PSU/层化设计，置信区间应谨慎解读。
+    \item \textbf{差分隐私}：多次发布统计量需组合隐私预算。
+    \item \textbf{小样本族裔组}：部分 \texttt{RIDRETH3} 类别样本量有限，公平性与分组建模不稳定。
+\end{itemize}

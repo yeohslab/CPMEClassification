@@ -1,0 +1,114 @@
+\section{技术方法}
+
+\begin{frame}[allowframebreaks]{情绪模块：字符级 CNN}
+    \small
+    \textbf{模型名称：}\texttt{SimpleEmotionModel}（\texttt{src/models/simple\_classifier.py}）。
+
+    \vspace{0.3em}
+    \textbf{设计动机：}中文短文本、本地可训练、词表可控；字符级嵌入避免大量 OOV，适合演示与部署。
+
+    \vspace{0.3em}
+    \textbf{结构要点：}
+    \begin{itemize}
+        \item 字符词表：训练集统计，保留 \texttt{<pad>}、\texttt{<unk>}，\texttt{min\_freq=2}。
+        \item 嵌入维度 128 $\to$ Conv1d（kernel=3）$\to$ ReLU $\to$ 掩码平均池化 $\to$ 线性头输出 6 logits。
+        \item 损失：\texttt{BCEWithLogitsLoss}；优化器 AdamW，$lr=10^{-3}$；验证集 macro-F1 最高保存 \texttt{best.pt}。
+        \item 序列长度：截断/填充至 128 字符。
+    \end{itemize}
+
+    \vspace{0.3em}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \textbf{公式示意：}
+            \[
+                \hat{\mathbf{y}} = \sigma\bigl( W \,\mathrm{Pool}(\mathrm{ReLU}(\mathrm{Conv}(\mathrm{Embed}(x)))) + \mathbf{b} \bigr)
+            \]
+            $\sigma$ 为逐维 sigmoid；$\hat{\mathbf{y}} \in [0,1]^6$。
+        \end{column}
+        \begin{column}{0.42\textwidth}
+            \includegraphics[width=\linewidth]{emotion_architecture.pdf}\\
+            {\scriptsize SimpleEmotionModel 结构}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.3em}
+    \textbf{评价指标：}MAE（六维平均绝对误差）、macro-F1（各维 0.5 阈值二值化）、dominant\_acc（$\arg\max$ 主导情绪是否一致）。
+\end{frame}
+
+\begin{frame}[allowframebreaks]{MBTI 模块：多核 TextCNN + 注意力}
+    \small
+    \textbf{模型名称：}\texttt{MbtiTextCNNModel}（\texttt{src/models/mbti\_textcnn.py}）。
+
+    \vspace{0.3em}
+    \textbf{单帖编码（Kim 风格 TextCNN）：}
+    \begin{itemize}
+        \item 多尺度卷积核 $\{2,3,4,5\}$，每核 128 个滤波器，拼接后经 dropout。
+        \item 单帖输出固定维向量，作为该帖的语义表示。
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{用户级聚合：}
+    \begin{itemize}
+        \item 对 $P$ 条帖子向量计算注意力权重 $\alpha_i$，加权求和得用户表示，再经全连接得 16 类 logits。
+        \item 训练时每步随机采样至多 16 帖，增加鲁棒性；推断时可输入 1--16 条有效帖子。
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{类别不均衡处理：}
+    \begin{itemize}
+        \item 加权交叉熵：$w_c \propto N/(16\, n_c)$，放大稀少类梯度。
+        \item Label smoothing $\varepsilon=0.05$，缓解过拟合与过度自信。
+    \end{itemize}
+
+    \includegraphics[width=0.92\linewidth]{mbti_architecture.pdf}\\
+    {\footnotesize 图：多帖 TextCNN + 用户级注意力池化}
+\end{frame}
+
+\begin{frame}{训练超参数与损失（对照表）}
+    \footnotesize
+    \begin{table}
+        \centering
+        \caption{默认训练配置（\texttt{train\_emotion.py} / \texttt{train\_mbti.py}）}
+        \begin{tabular}{lcc}
+            \toprule
+            超参数 & 情绪 & MBTI \\
+            \midrule
+            优化器 & AdamW, $lr=10^{-3}$ & AdamW, $lr=5\times 10^{-4}$, wd $10^{-4}$ \\
+            学习率调度 & 无 & CosineAnnealingLR \\
+            批大小 & 64--128 & 24 \\
+            推荐轮数 & 3--5 epoch & 10 epoch \\
+            损失函数 & BCEWithLogits & CE + 类权重 + smoothing \\
+            其他 & — & 梯度裁剪 $\|\nabla\|_2 \leq 1$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.4em}
+    \textbf{选模策略：}均在验证集上监控 macro-F1，取最优 checkpoint 用于测试与 ONNX 导出。
+
+    \vspace{0.3em}
+    \textbf{口播参考：}「MBTI 比情绪更难，因为是 16 类且用户级样本少；所以我们用了 TextCNN 提局部 n-gram 特征，再用注意力把多条帖子融成一个用户向量。」
+\end{frame}
+
+\begin{frame}{复现步骤与 ONNX 部署}
+    \small
+    \begin{block}{命令行复现（可做成 PPT 代码页）}
+        \begin{enumerate}
+            \item \texttt{pip install -r requirements.txt}
+            \item \texttt{cd src \&\& python prepare\_dataset.py}
+            \item \texttt{python train\_emotion.py --epochs 3 --batch\_size 128}
+            \item \texttt{python train\_mbti.py --epochs 10 --batch\_size 24 --max\_posts 16}
+            \item \texttt{python evaluate.py} \quad （测试集 MAE / F1 / accuracy）
+            \item \texttt{python export\_onnx.py} \quad $\to$ \texttt{web/public/models/}
+        \end{enumerate}
+    \end{block}
+
+    \textbf{浏览器推理：}
+    \begin{itemize}
+        \item 前端加载 \texttt{emotion.onnx}、\texttt{mbti.onnx} 及词表 JSON。
+        \item 分词/编码在 TypeScript 实现，与 Python 训练时一致。
+        \item GitHub Pages 路径基址：\texttt{/CPMEClassification/}；本地 \texttt{npm run dev}。
+    \end{itemize}
+
+    \textbf{测试集结果：}运行 \texttt{evaluate.py} 后在报告中填写 MAE、macro-F1、accuracy 等（权重默认 \texttt{gitignore}，需本地训练后才有数值）。
+\end{frame}

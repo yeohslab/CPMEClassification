@@ -48,8 +48,14 @@ src/
   export_onnx.py
   evaluate.py
 web/                  # Vite 前端 + ONNX 浏览器推理
+  public/assets/      # 插画（从 Material/ 同步，见下方说明）
+Material/             # 16 型角色 SVG 源文件
 models/checkpoints/   # 训练权重（本地，已 gitignore）
 ```
+
+## 前端插画
+
+更新 `Material/` 中的 SVG 后，请同步到 `web/public/assets/`（例如 `Copy-Item Material\*.svg web\public\assets\`），以便本地 dev 与 GitHub Pages 构建能加载到最新资源。
 
 ## 说明
 

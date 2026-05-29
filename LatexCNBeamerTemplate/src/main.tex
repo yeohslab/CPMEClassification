@@ -1,0 +1,155 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 使用 beamer 类，用于制作幻灯片
+
+\documentclass[12pt,aspectratio=169]{ctexbeamer}  % 使用 beamer 类，16:9 比例，12 号字体
+% \documentclass[12pt,aspectratio=43]{ctexbeamer}   % 使用 beamer 类，4:3 比例，12 号字体
+% \documentclass[12pt,aspectratio=1610]{ctexbeamer} % 使用 beamer 类，16:10 比例，12 号字体
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 使用 pdfpages 包处理 pdf 文件讲义
+
+% \usepackage{pdfpages}
+% \pdfpagesuselayouts{4 on 1}[a4paper, border shrink=5mm] % 使用 4 on 1 布局，a4 纸，边框缩进 5mm
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usecolortheme{seahorse}
+\AtBeginDocument{%
+    \setCJKsansfont{Microsoft YaHei}[AutoFakeSlant=0.2]
+}
+\setbeamercovered{transparent}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{graphicx}
+\graphicspath{{../pic/}{./pic/}{../../LatexCNArticleTemplate/pic/}}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{esint}
+
+
+\makeatletter
+\let\Hy@WarnOptionDisabled\@gobble
+\makeatother
+\PassOptionsToPackage{pdfpagelabels=false}{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue} 
+
+\makeatletter
+\theoremstyle{definition}
+\@ifundefined{endtheorem}{%
+    \newtheorem{theorem}{定理}[section]
+}{}
+\@ifundefined{endlemma}{%
+    \newtheorem{lemma}[theorem]{引理}
+}{}
+\@ifundefined{endproposition}{%
+    \newtheorem{proposition}[theorem]{命题}
+}{}
+\@ifundefined{endcorollary}{%
+    \newtheorem{corollary}[theorem]{推论}
+}{}
+
+\theoremstyle{definition}
+\@ifundefined{enddefinition}{%
+    \newtheorem{definition}[theorem]{定义}
+}{}
+\@ifundefined{endaxiom}{%
+    \newtheorem{axiom}[theorem]{公理}
+}{}
+\@ifundefined{endlaw}{%
+    \newtheorem{law}[theorem]{定律}
+}{}
+\@ifundefined{endformula}{%
+    \newtheorem{formula}[theorem]{公式}
+}{}
+
+\theoremstyle{definition}
+\@ifundefined{endremark}{%
+    \newtheorem{remark}[theorem]{注}
+}{}
+\makeatother
+
+\makeatletter
+\expandafter\ifx\csname exercise\endcsname\relax
+    \newcounter{exercise}
+    \newenvironment{exercise}
+        {\refstepcounter{exercise}\par\noindent\textbf{练习~\thesection.\theexercise.}\ }
+        {\par}
+\fi
+
+\expandafter\ifx\csname solution\endcsname\relax
+    \@ifundefined{thesolution}{%
+        \newcounter{solution}
+    }{}
+    \newenvironment{solution}
+        {\refstepcounter{solution}\par\noindent\textbf{解~\thesection.\thesolution.}\ }
+        {\par}
+\fi
+
+\expandafter\ifx\csname example\endcsname\relax
+    \@ifundefined{theexample}{%
+        \newcounter{example}
+    }{}
+    \newenvironment{example}
+        {\refstepcounter{example}\par\noindent\textbf{例~\thesection.\theexample.}\ }
+        {\par}
+\fi
+\makeatother
+
+\AtBeginSection{
+    \setcounter{theorem}{0}
+    \setcounter{lstlisting}{0}
+}
+
+\renewcommand{\proofname}{证明}
+\usepackage{listings} 
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=true,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+\renewcommand{\lstlistingname}{代码}
+\AtBeginDocument{%
+    \renewcommand*{\thelstlisting}{\thesection.\arabic{lstlisting}}
+}
+
+\usepackage{booktabs}
+
+\begin{document}
+
+\input{./TeX_files/frontmatter}
+
+\input{./TeX_files/section01}
+
+\input{./TeX_files/section02}
+
+\input{./TeX_files/section03}
+
+\input{./TeX_files/section04}
+
+\input{./TeX_files/backmatter} 
+
+\end{document}

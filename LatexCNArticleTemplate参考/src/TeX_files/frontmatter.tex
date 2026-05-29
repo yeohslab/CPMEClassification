@@ -1,0 +1,11 @@
+\title{NHANES 抑郁筛查与健康公平性分析\\{\large 差分隐私、算法公平、贝叶斯阈值与因果推断}}
+\author{人工智能导论课程报告}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+本研究基于美国 CDC 发布的 NHANES 2017--2020 前疫情公开数据，整合人口学（\texttt{P\_DEMO}）、抑郁筛查 PHQ-9（\texttt{P\_DPQ}）、睡眠（\texttt{P\_SLQ}）与体力活动（\texttt{P\_PAQ}）模块。在 MEC 体检权重 \texttt{WTMECPRP} 下，我们完成四项分析：（1）对 PHQ-9 加权统计量实施 Laplace 差分隐私加噪；（2）比较不同族裔在抑郁风险预测中的 TPR/FPR 与阳性预测率；（3）由诊断损失矩阵推导最优贝叶斯分类阈值并与网格搜索对照；（4）对贫困比与低教育两个暴露进行后门调整估计抑郁因果效应。结果表明，隐私预算 $\varepsilon$ 越小误差越大；族裔间算法指标存在差异；筛查场景下最优概率阈值 $\tau^\ast \approx 0.83$；调整后贫困与低教育均与抑郁风险正相关，但横断面设计无法确立时序因果。
+\end{abstract}
+
+\tableofcontents
+\newpage

@@ -1,0 +1,88 @@
+\section{数据集介绍}
+
+\begin{frame}[allowframebreaks]{CPME 语料来源与规模}
+    \small
+    \textbf{数据集名称：}CPME（Chinese Personality \& Mood Expression，中文微博风格人格与情绪表达语料）。
+
+    \vspace{0.3em}
+    \textbf{文献：}Zhou et al., arXiv:2411.08347；开源仓库：Chinese-Affective-Computing-Dataset。
+
+    \vspace{0.3em}
+    \textbf{原始组织方式：}
+    \begin{itemize}
+        \item \texttt{data/} 下按 16 种 MBTI 四字母类型分子文件夹（如 \texttt{INTJ/}, \texttt{ENFP/}）。
+        \item 每个用户一个 CSV 文件，内含\textbf{多行帖子}；每行除文本外，带 6 列情绪强度标注（浮点数 $[0,1]$）。
+        \item 约每类 100 个用户 $\Rightarrow$ 合计约 \textbf{1600 用户}；扁平化后约 \textbf{80000 条帖子}。
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{预处理（\texttt{prepare\_dataset.py}）：}
+    \begin{itemize}
+        \item 合并为 \texttt{processed/posts.csv}，字段含用户 ID、MBTI 类型、帖子文本、六维情绪。
+        \item 生成帖子级索引（情绪任务）与用户级索引（MBTI 任务）。
+        \item 随机种子固定 \texttt{seed=42}，划分比例 \textbf{8:1:1}（训练 / 验证 / 测试）。
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{口播参考：}「情绪任务把每条微博当作一个样本；MBTI 任务把一个用户的所有帖子打包成一个样本，并且按用户划分，避免同一个人同时出现在训练集和测试集。」
+\end{frame}
+
+\begin{frame}{数据划分与类别分布}
+    \footnotesize
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \includegraphics[width=\linewidth]{data_split.pdf}\\
+            {\scriptsize 左：情绪（帖级）与 MBTI（用户级）划分规模}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \includegraphics[width=\linewidth]{mbti_class_dist.pdf}\\
+            {\scriptsize 右：各 MBTI 类型帖子数量（可讨论类别不均衡）}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4em}
+    \textbf{任务形式化（写入方法 slide 可选用）：}
+    \begin{itemize}
+        \item 情绪：$f_{\mathrm{emo}}(x) \in [0,1]^6$，损失为逐维 BCE；推断时 sigmoid。
+        \item MBTI：$g_{\mathrm{mbti}}(x_1,\ldots,x_P) \in \{1,\ldots,16\}$，$P \leq 16$；训练时随机子采样帖子。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{标注字段与预处理配置}
+    \footnotesize
+    \begin{table}
+        \centering
+        \caption{数据配置对照（摘自项目文档）}
+        \begin{tabular}{lll}
+            \toprule
+            项目 & 情绪模块 & MBTI 模块 \\
+            \midrule
+            样本单位 & 单帖 & 用户（多帖聚合） \\
+            标签 & 6 维连续 $[0,1]$ & 16 类 MBTI \\
+            \texttt{max\_length} & 128 字符 & 160 字符 \\
+            训练时帖子数 & 1 & 随机至多 16 条 \\
+            词表 \texttt{min\_freq} & 2 & 1 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.3em}
+    \textbf{六维情绪说明：}\texttt{angry}（愤怒）、\texttt{fear}（恐惧）、\texttt{happy}（喜悦）、\texttt{neutral}（中性）、\texttt{sad}（悲伤）、\texttt{surprise}（惊讶）。全库统计上 \texttt{neutral}、\texttt{happy} 均值往往较高；维度间存在一定正相关，故采用\textbf{多标签}而非单标签分类。
+
+    \vspace{0.3em}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{emotion_mean.pdf}\\
+            {\scriptsize 六维情绪全库均值}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{数据质量注意点：}
+            \begin{itemize}
+                \item 文本为微博口语，含表情、话题标签、网络用语。
+                \item MBTI 标签为数据集采集时的类型字段，非独立第三方测评。
+                \item 情绪标注为连续强度，评估时常辅以 dominant 情绪准确率。
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}

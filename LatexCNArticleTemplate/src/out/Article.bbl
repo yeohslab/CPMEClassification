@@ -1,0 +1,14 @@
+\begin{thebibliography}{1}
+
+\bibitem{Kim2014}
+Yoon Kim.
+\newblock Convolutional neural networks for sentence classification.
+\newblock In {\em Proceedings of EMNLP}, 2014.
+
+\bibitem{CPME2024}
+Ye~Zhou et~al.
+\newblock Cpme: A large-scale chinese psychological and mental health
+  evaluation dataset, 2024.
+\newblock GitHub: Chinese-Affective-Computing-Dataset.
+
+\end{thebibliography}

@@ -1,0 +1,6 @@
+\contentsline {section}{\numberline {1}数据与方法}{2}{section.1}%
+\contentsline {section}{\numberline {2}差分隐私：PHQ-9 统计量加噪}{2}{section.2}%
+\contentsline {section}{\numberline {3}族裔算法公平性}{2}{section.3}%
+\contentsline {section}{\numberline {4}诊断损失矩阵与最优贝叶斯阈值}{4}{section.4}%
+\contentsline {section}{\numberline {5}因果推断：后门调整}{4}{section.5}%
+\contentsline {section}{\numberline {6}讨论与局限}{6}{section.6}%

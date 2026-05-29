@@ -1,0 +1,11 @@
+\title{CPME 微博文本情绪与 MBTI 分类\\{\large 轻量化字符卷积模型训练实验报告}}
+\author{CPME Classification 项目技术报告}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+本报告基于中文情感计算数据集 CPME\cite{CPME2024}，在 \texttt{CPMEClassification} 工程中实现并训练双模块推理系统：（1）单帖六维情绪强度回归；（2）同一用户多帖聚合的 16 型 MBTI 分类。方法上不依赖 HuggingFace 预训练下载，采用字符词表与卷积神经网络，在约 $8\times 10^4$ 条帖子、$1600$ 个用户文件上按 $8:1:1$ 划分训练/验证/测试集；情绪模块以验证集 macro-F1 选模，MBTI 模块结合类别权重、label smoothing 与余弦学习率调度。报告给出数据分布、模型结构、超参数表、评价指标及 ONNX 部署流水线，并配以统计图与结构示意图；MBTI 结果仅作统计学习演示，不构成心理测评建议。
+\end{abstract}
+
+\tableofcontents
+\newpage

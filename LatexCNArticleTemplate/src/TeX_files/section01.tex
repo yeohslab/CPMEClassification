@@ -1,0 +1,187 @@
+\section{数据与方法}
+
+本研究使用 CPME 中文微博风格语料\cite{CPME2024}：\texttt{data/} 下 16 种 MBTI 类型各约 $100$ 个用户 CSV，每文件含多行帖子文本及六列情绪强度标注（\texttt{angry, fear, happy, neutral, sad, surprise}，取值 $[0,1]$）。经 \texttt{prepare\_dataset.py} 扁平化并缓存为 \texttt{processed/posts.csv}，全库共 $80000$ 条帖子、$1600$ 个用户；划分索引固定 \texttt{seed=42}，比例 $8:1:1$（图\ref{fig:split}）。
+
+\begin{definition}[情绪多标签任务]
+对帖子 $x$，学习映射 $f_{\mathrm{emo}}(x) \in [0,1]^6$，训练时对 logits 使用 $\mathcal{L}_{\mathrm{BCE}}$；推断时对输出施加 sigmoid 得到各维强度。
+\end{definition}
+
+\begin{definition}[MBTI 用户级分类]
+对用户 $u$ 的帖子集合 $\{x_1,\ldots,x_P\}$（$P \leq 16$），学习 $g_{\mathrm{mbti}}(x_1,\ldots,x_P) \in \{1,\ldots,16\}$，以\textbf{用户文件}为样本单位划分数据，避免同一用户泄漏至训练与测试集。
+\end{definition}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.88\textwidth]{pipeline_overview.pdf}
+    \caption{从原始 CSV 到 ONNX 浏览器推理的训练与部署流水线}
+    \label{fig:pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.82\textwidth]{data_split.pdf}
+    \caption{情绪（帖子级）与 MBTI（用户级）训练/验证/测试划分规模}
+    \label{fig:split}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.88\textwidth]{mbti_class_dist.pdf}
+    \caption{扁平化后各 MBTI 类型的帖子数量分布}
+    \label{fig:mbti_dist}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \caption{数据预处理与序列化配置}
+    \label{tab:data}
+    \begin{tabular}{lll}
+        \toprule
+        项目 & 情绪模块 & MBTI 模块 \\
+        \midrule
+        样本单位 & 单帖 & 用户（多帖） \\
+        标签 & 6 维连续 $[0,1]$ & 16 类 MBTI \\
+        \texttt{max\_length} & 128 & 160 \\
+        训练时帖子采样 & — & 随机至多 16 条 \\
+        词表 \texttt{min\_freq} & 2 & 1 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+图\ref{fig:emotion_mean}--\ref{fig:emotion_corr} 展示全库情绪标注的均值与维度间相关；\texttt{neutral} 与 \texttt{happy} 均值较高，部分负向情绪维度存在正相关，提示多标签回归的必要性。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.82\textwidth]{emotion_mean.pdf}
+    \caption{六维情绪强度在全库上的平均值}
+    \label{fig:emotion_mean}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.72\textwidth]{emotion_corr.pdf}
+    \caption{六维情绪标注的 Pearson 相关矩阵}
+    \label{fig:emotion_corr}
+\end{figure}
+
+\section{情绪识别：字符卷积编码器}
+
+字符词表在训练集上统计频次，保留 \texttt{<pad>}、\texttt{<unk>}，文本空白归一化后截断/填充至固定长度。编码器将字符 ID 嵌入为 128 维，经 kernel size $=3$ 的一维卷积与 ReLU，再对非填充位置掩码平均池化，线性头输出 6 维 logits（图\ref{fig:emo_arch}）。
+
+\begin{equation}
+    \hat{\mathbf{y}} = \sigma\bigl( W \,\mathrm{Pool}(\mathrm{ReLU}(\mathrm{Conv}(\mathrm{Embed}(x)))) + \mathbf{b} \bigr),
+\end{equation}
+其中 $\sigma$ 为逐维 sigmoid，优化器为 AdamW（$lr=10^{-3}$），损失为 \texttt{BCEWithLogitsLoss}；验证集上 macro-F1 最高时保存 \texttt{best.pt}。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{emotion_architecture.pdf}
+    \caption{SimpleEmotionModel 单帖 char-CNN 结构示意}
+    \label{fig:emo_arch}
+\end{figure}
+
+\section{MBTI 分类：多核 TextCNN 与帖子注意力}
+
+单帖编码采用 Kim 风格 TextCNN\cite{Kim2014}：卷积核 $\{2,3,4,5\}$，每核 128 滤波器，拼接后 dropout。用户级对 $P$ 条帖子向量计算注意力权重并加权求和，再经全连接得到 16 类 logits（图\ref{fig:mbti_arch}）。
+
+\begin{proposition}[加权交叉熵与类别不均衡]
+设训练集类别计数为 $n_c$，总样本 $N$，则权重 $w_c \propto N/(16\, n_c)$ 并归一化；配合 label smoothing $\varepsilon=0.05$ 的交叉熵可缓解长尾 MBTI 类型的梯度消失。
+\end{proposition}
+
+\begin{proof}[证明要点]
+逆频率权重使稀少类损失贡献放大；label smoothing 将 one-hot 目标软化为 $(1-\varepsilon)\mathbf{e}_c + \varepsilon/K$，等价于对各类别 logit 施加均匀先验正则。
+\end{proof}
+
+训练使用 AdamW（$lr=5\times 10^{-4}$，weight decay $10^{-4}$）、余弦退火调度、梯度裁剪 $\|\nabla\|_2 \leq 1$；验证 macro-F1 选模。图\ref{fig:loss} 给出两任务验证损失随 epoch 的典型衰减形态（示意曲线，具体数值依赖硬件与轮数）。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.88\textwidth]{mbti_architecture.pdf}
+    \caption{MbtiTextCNNModel：多帖 TextCNN 编码与用户级注意力池化}
+    \label{fig:mbti_arch}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{training_loss_tradeoff.pdf}
+    \caption{情绪 BCE 与 MBTI CE 验证损失随训练轮次的典型形态（示意）}
+    \label{fig:loss}
+\end{figure}
+
+\section{训练配置、评价指标与复现}
+
+表\ref{tab:hp} 汇总默认超参数（与 \texttt{train\_emotion.py}、\texttt{train\_mbti.py} 一致）。表\ref{tab:metrics} 定义验证/测试指标；表\ref{tab:results} 供本地运行 \texttt{evaluate.py} 后填入实测值（权重目录已 \texttt{gitignore}）。
+
+\begin{table}[htbp]
+    \centering
+    \caption{默认训练超参数}
+    \label{tab:hp}
+    \begin{tabular}{lcc}
+        \toprule
+        超参数 & 情绪 & MBTI \\
+        \midrule
+        优化器 & AdamW, $10^{-3}$ & AdamW, $5\times 10^{-4}$, wd $10^{-4}$ \\
+        学习率调度 & 无 & CosineAnnealingLR \\
+        批大小 & 64（推荐 128） & 24 \\
+        训练轮数 & 5（推荐 3） & 10 \\
+        损失 & BCEWithLogits & CE + 类权重 + smoothing 0.05 \\
+        其他 & — & 梯度裁剪 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{评价指标说明}
+    \label{tab:metrics}
+    \begin{tabular}{lp{7.2cm}}
+        \toprule
+        指标 & 说明 \\
+        \midrule
+        MAE & 六维情绪预测与标注的平均绝对误差 \\
+        macro-F1（情绪） & 各维以 $0.5$ 二值化后的宏平均 F1 \\
+        dominant\_acc & 主导情绪 $\arg\max$ 是否一致 \\
+        accuracy / macro-F1（MBTI） & 16 类准确率与宏 F1 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{测试集结果（运行 \texttt{evaluate.py} 后填写）}
+    \label{tab:results}
+    \begin{tabular}{lccc}
+        \toprule
+        任务 & 指标 1 & 指标 2 & 指标 3 \\
+        \midrule
+        情绪 & MAE & macro-F1 & dominant\_acc \\
+        MBTI & accuracy & macro-F1 & — \\
+        \midrule
+        实测 & \_\_\_\_ & \_\_\_\_ & \_\_\_\_ \\
+        实测 & \_\_\_\_ & \_\_\_\_ & — \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+复现步骤：
+\begin{enumerate}
+    \item \texttt{pip install -r requirements.txt}
+    \item \texttt{cd src \&\& python prepare\_dataset.py}
+    \item \texttt{python train\_emotion.py --epochs 3 --batch\_size 128}
+    \item \texttt{python train\_mbti.py --epochs 10 --max\_posts 16}
+    \item \texttt{python evaluate.py}；\texttt{python export\_onnx.py}
+\end{enumerate}
+亦可执行 \texttt{scripts/train\_all.ps1}。图\ref{fig:pipeline} 末端的 ONNX 权重供 Vite 前端 \texttt{onnxruntime-web} 演示。
+
+\section{讨论与局限}
+
+\begin{itemize}
+    \item \textbf{横断面语料}：帖子与 MBTI 标签同期观测，模型学习的是关联模式而非时序因果。
+    \item \textbf{字符 CNN 容量}：相对 BERT 等预训练模型，长程语义与共指建模不足；优势在于本地可训练、词表小、浏览器可部署。
+    \item \textbf{MBTI 标签}：源自数据集分层，仅作算法演示，\textbf{不得}用于心理测评或招聘筛选。
+    \item \textbf{帖子子采样}：训练时随机抽取至多 16 帖引入方差；增大 \texttt{max\_posts} 可提升信号但线性增加算力。
+\end{itemize}
+
+\begin{remark}
+报告插图由 \texttt{LatexCNArticleTemplate/scripts/gen\_report\_figures.py} 从 \texttt{processed/posts.csv} 统计生成；训练损失图为典型形态示意。重新制图请在该脚本修改后运行并重新编译 \XeLaTeX。
+\end{remark}

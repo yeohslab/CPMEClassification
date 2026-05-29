@@ -1,0 +1,77 @@
+\section{系统功能与演示}
+
+\begin{frame}[allowframebreaks]{Web 前端：用户流程与界面}
+    \small
+    \textbf{技术栈：}Vite + React + TypeScript；推理引擎 \texttt{onnxruntime-web}；部署于 GitHub Pages。
+
+    \vspace{0.3em}
+    \textbf{分步体验（建议演示时按此顺序操作）：}
+    \begin{enumerate}
+        \item \textbf{Landing 首屏}：项目简介、山景插画、「开始体验」按钮。
+        \item \textbf{情绪分析}：用户输入一条微博风格文本 $\to$ 点击分析 $\to$ 展示主情绪徽章 + 六维彩色进度条（0--100\%）。
+        \item \textbf{MBTI 预测}：默认 3 条示例帖子，可增删至最多 16 条 $\to$ 预测 $\to$ 展示四字母类型、中英文角色昵称、角色组配色、Top-3 概率条、16 型插画。
+        \item \textbf{总结页}：汇总情绪主倾向与 MBTI 结果，提供「重新开始」。
+    \end{enumerate}
+
+    \vspace{0.3em}
+    \textbf{产品卖点表述：}
+    \begin{itemize}
+        \item \textbf{隐私友好}：推理在浏览器端完成，帖子不必上传服务器。
+        \item \textbf{可解释性（弱）}：情绪六维可视化；MBTI 给出 Top-3 概率而非单点硬判。
+        \item \textbf{视觉参考}：界面灵感来自人格类型框架；插画存于 \texttt{Material/}，与 16Personalities 无官方关联。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{演示截图与现场话术}
+    \footnotesize
+    \begin{columns}[T]
+        \begin{column}{0.52\textwidth}
+            \includegraphics[width=\linewidth]{architect.png}\\
+            {\scriptsize 示例：预测为 INTJ 时展示「建筑师」插画与紫系分析家配色}
+            \vspace{0.3em}
+
+            \textbf{现场演示 checklist：}
+            \begin{itemize}
+                \item 提前确认 \texttt{web/public/models/} 含 ONNX 与词表
+                \item 打开 \url{https://yeohslab.github.io/CPMEClassification/} 或本地 dev
+                \item 准备 1 条正面情绪帖 + 3--8 条同一「人设」帖做 MBTI
+                \item 结尾强调\textbf{免责声明}
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.45\textwidth}
+            \includegraphics[width=\linewidth]{complete-lg.png}\\
+            {\scriptsize 总结页装饰图示例}
+
+            \vspace{0.5em}
+            \begin{exampleblock}{示例话术（功能页）}
+                「大家输入的是中文微博口语；模型在本地用导出的 ONNX 算情绪向量和 MBTI  logits，不调用云端 API。结果仅供课程演示，不能当心理测评。」
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{汇报时可强调的对比}
+    \small
+    \begin{table}
+        \centering
+        \begin{tabular}{p{3.5cm}p{4.5cm}p{4.5cm}}
+            \toprule
+            维度 & 本项目的做法 & 可对比的替代方案 \\
+            \midrule
+            表示学习 & 字符 CNN / TextCNN & BERT、LLM 微调 \\
+            部署 & ONNX + 浏览器 & 仅服务端 API \\
+            数据 & CPME 固定标注 & 自建标注成本高 \\
+            任务 & 情绪回归 + MBTI 分类 & 仅做其一 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    \textbf{局限（建议单独一页 PPT）：}
+    \begin{itemize}
+        \item 横断面语料，学的是关联而非因果；不能推断「发帖导致人格」。
+        \item 字符模型长程语义、共指、讽刺理解弱于大预训练模型。
+        \item MBTI 标签质量与生态位争议；\textbf{禁止}用于招聘筛选或临床诊断。
+        \item 训练时随机抽帖带来方差；增加 \texttt{max\_posts} 提升信号但算力线性涨。
+    \end{itemize}
+\end{frame}

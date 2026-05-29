@@ -1,15 +1,25 @@
 import { useEffect, useState } from "react";
+import CompleteSummary from "./components/CompleteSummary";
 import EmotionPanel from "./components/EmotionPanel";
+import LandingHero from "./components/LandingHero";
 import MbtiPanel from "./components/MbtiPanel";
+import SiteFooter from "./components/SiteFooter";
+import SiteHeader from "./components/SiteHeader";
+import type { FlowStep } from "./components/StepProgress";
 import { loadModels } from "./inference";
 
-type Tab = "emotion" | "mbti";
-
 export default function App() {
-  const [tab, setTab] = useState<Tab>("emotion");
+  const [step, setStep] = useState<FlowStep>("landing");
   const [status, setStatus] = useState("正在加载模型…");
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [dominantEmotion, setDominantEmotion] = useState<string | null>(null);
+  const [dominantScore, setDominantScore] = useState<number | null>(null);
+  const [mbtiResult, setMbtiResult] = useState<string | null>(null);
+  const [mbtiTop3, setMbtiTop3] = useState<{ type: string; prob: number }[]>(
+    []
+  );
 
   useEffect(() => {
     loadModels(setStatus)
@@ -27,37 +37,137 @@ export default function App() {
       });
   }, []);
 
+  const handleRestart = () => {
+    setDominantEmotion(null);
+    setDominantScore(null);
+    setMbtiResult(null);
+    setMbtiTop3([]);
+    setStep("landing");
+  };
+
+  const showModelStatus = step !== "landing" && step !== "complete";
+
   return (
-    <>
-      <h1>CPME 情绪 & MBTI 推理</h1>
-      <p className="subtitle">
-        基于 CPME 数据集训练 · 浏览器内 ONNX 推理（GitHub Pages）
-      </p>
-      <p className={`status ${loadError ? "error" : ""}`}>
-        {loadError ?? status}
-      </p>
-      <div className="tabs">
-        <button
-          className={tab === "emotion" ? "active" : ""}
-          onClick={() => setTab("emotion")}
-        >
-          单帖情绪
-        </button>
-        <button
-          className={tab === "mbti" ? "active" : ""}
-          onClick={() => setTab("mbti")}
-        >
-          多帖 MBTI
-        </button>
-      </div>
-      {tab === "emotion" ? (
-        <EmotionPanel modelsReady={ready} />
-      ) : (
-        <MbtiPanel modelsReady={ready} />
+    <div className="app">
+      {step !== "landing" && (
+        <SiteHeader step={step} onHome={handleRestart} />
       )}
-      <p className="disclaimer">
-        免责声明：本工具为基于统计学习的演示模型，结果仅供研究娱乐，不构成心理测评或人格诊断建议。
-      </p>
-    </>
+
+      <main className="app__main">
+        {step === "landing" && (
+          <LandingHero onStart={() => setStep("emotion")} />
+        )}
+
+        {step === "emotion" && (
+          <div className="step-page">
+            {showModelStatus && (
+              <ModelStatus
+                ready={ready}
+                loadError={loadError}
+                status={status}
+              />
+            )}
+            <EmotionPanel
+              modelsReady={ready}
+              onResult={(d, s) => {
+                setDominantEmotion(d);
+                setDominantScore(s);
+              }}
+            />
+            <div className="step-actions">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setStep("mbti")}
+              >
+                跳过，直接去 MBTI
+              </button>
+              <button
+                type="button"
+                className="btn btn--cta"
+                onClick={() => setStep("mbti")}
+                disabled={!ready}
+              >
+                下一步：MBTI 预测
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "mbti" && (
+          <div className="step-page">
+            {showModelStatus && (
+              <ModelStatus
+                ready={ready}
+                loadError={loadError}
+                status={status}
+              />
+            )}
+            <MbtiPanel
+              modelsReady={ready}
+              onResult={(m, t) => {
+                setMbtiResult(m);
+                setMbtiTop3(t);
+              }}
+            />
+            <div className="step-actions">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setStep("emotion")}
+              >
+                上一步
+              </button>
+              <button
+                type="button"
+                className="btn btn--cta"
+                onClick={() => setStep("complete")}
+              >
+                查看总结
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "complete" && (
+          <CompleteSummary
+            dominantEmotion={dominantEmotion}
+            dominantScore={dominantScore}
+            mbti={mbtiResult}
+            top3={mbtiTop3}
+            onRestart={handleRestart}
+          />
+        )}
+      </main>
+
+      <SiteFooter />
+    </div>
   );
+}
+
+function ModelStatus({
+  ready,
+  loadError,
+  status,
+}: {
+  ready: boolean;
+  loadError: string | null;
+  status: string;
+}) {
+  if (loadError) {
+    return (
+      <p className="model-status model-status--error" role="alert">
+        {loadError}
+      </p>
+    );
+  }
+  if (!ready) {
+    return (
+      <p className="model-status" aria-live="polite">
+        <span className="spinner" aria-hidden="true" />
+        {status || "正在加载模型…"}
+      </p>
+    );
+  }
+  return null;
 }

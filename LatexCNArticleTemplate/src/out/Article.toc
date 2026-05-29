@@ -1,0 +1,5 @@
+\contentsline {section}{\numberline {1}数据与方法}{2}{section.1}%
+\contentsline {section}{\numberline {2}情绪识别：字符卷积编码器}{4}{section.2}%
+\contentsline {section}{\numberline {3}MBTI 分类：多核 TextCNN 与帖子注意力}{4}{section.3}%
+\contentsline {section}{\numberline {4}训练配置、评价指标与复现}{6}{section.4}%
+\contentsline {section}{\numberline {5}讨论与局限}{8}{section.5}%

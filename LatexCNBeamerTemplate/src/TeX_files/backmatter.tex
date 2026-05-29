@@ -1,0 +1,54 @@
+\section{总结}
+
+\begin{frame}[allowframebreaks]{总结页文案（可直接贴到 PPT 末页）}
+    \small
+    \begin{block}{三句话总结}
+        \begin{enumerate}
+            \item 基于 CPME 中文微博语料，构建\textbf{帖子级情绪回归}与\textbf{用户级 MBTI 分类}双任务流水线，数据划分与预处理可复现。
+            \item 采用轻量 char-CNN 与多帖 TextCNN+注意力，在 CPU 环境完成训练，并导出 ONNX 实现\textbf{浏览器端推理}。
+            \item 配套分步 Web 演示与 16 型角色插画，适合课程快闪、方法展示与隐私友好场景。
+        \end{enumerate}
+    \end{block}
+
+    \vspace{0.4em}
+    \begin{block}{可写在 Q\&A 页的常见问题}
+        \begin{itemize}
+            \item \textbf{问：准确率多少？} 答：取决于本地训练；运行 \texttt{evaluate.py} 查看测试集 MAE / F1 / accuracy。
+            \item \textbf{问：能否换成 ChatGPT？} 答：本项目重点是\textbf{可复现的小模型 + 端侧部署}，与大模型 API 场景不同。
+            \item \textbf{问：MBTI 准吗？} 答：仅算法演示，标签来自数据集，\textbf{不得}作心理测评。
+            \item \textbf{问：如何扩展？} 答：可换 BERT 编码器、增加情绪维度、或做多任务联合训练。
+        \end{itemize}
+    \end{block}
+
+    \vspace{0.4em}
+    \begin{alertblock}{免责声明（必须保留）}
+        本工具为基于统计学习的演示模型，结果仅供研究娱乐，\textbf{不构成}心理测评或人格诊断建议。界面视觉灵感来自公开人格类型框架，插画素材位于项目 \texttt{Material/} 目录，与任何商业测评网站无官方合作。
+    \end{alertblock}
+
+    \vspace{0.6em}
+    \centering
+    {\Large 谢谢！欢迎提问、试用在线演示与查看 GitHub 仓库。}
+\end{frame}
+
+\begin{frame}{附录：建议的 PPT 页数映射}
+    \footnotesize
+    \begin{table}
+        \centering
+        \begin{tabular}{clp{7cm}}
+            \toprule
+            建议页序 & 主题 & 本讲义对应 frame \\
+            \midrule
+            1 & 封面 & frontmatter 标题页 \\
+            2 & 背景与目标 & 项目背景与目标 \\
+            3 & 任务表 & 双模块任务对照表 \\
+            4--5 & 数据集 & section02 三页 \\
+            6--8 & 模型方法 & section03 情绪 + MBTI + 训练 \\
+            9--10 & 系统演示 & section04 \\
+            11 & 总结免责 & backmatter \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    \textbf{3 分钟快闪版：}可从每节各选 1 页，共约 6--7 页；本讲义保留全文供扩展汇报使用。
+\end{frame}

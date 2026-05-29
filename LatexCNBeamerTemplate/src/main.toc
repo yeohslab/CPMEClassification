@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{项目介绍}{3}{0}{1}
+\beamer@sectionintoc {2}{数据集介绍}{7}{0}{2}
+\beamer@sectionintoc {3}{技术方法}{11}{0}{3}
+\beamer@sectionintoc {4}{系统功能与演示}{17}{0}{4}
+\beamer@sectionintoc {5}{总结}{21}{0}{5}
